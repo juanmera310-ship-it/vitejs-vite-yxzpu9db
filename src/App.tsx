@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, BookmarkCheck } from 'lucide-react';
 
-// Definimos qué datos tiene una cita para que TypeScript no se queje
 interface Appointment {
   id: number;
   name: string;
@@ -43,14 +42,12 @@ export default function BarberCastel() {
   const addAppointment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
     const newApp: Appointment = {
       id: Date.now(),
       name: (formData.get('clientName') as string) || 'Sin nombre',
       service: (formData.get('service') as string) || 'Corte',
       time: (formData.get('time') as string) || '--:--',
     };
-    
     setAppointments([...appointments, newApp]);
     alert(`¡Cita agendada para ${newApp.name}!`);
     e.currentTarget.reset();
@@ -64,18 +61,32 @@ export default function BarberCastel() {
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans pb-24 text-left">
       <header className="p-6 border-b border-amber-900/30 bg-black sticky top-0 z-50 flex justify-between items-center shadow-2xl">
         <div className="flex items-center gap-3">
-          <div className="relative w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-700 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(217,119,6,0.4)]">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
-              <line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" />
+          {/* LOGOTIPO BC: TIJERAS, NAVAJA Y POSTE GIRATORIO */}
+          <div className="relative w-14 h-14 bg-gradient-to-br from-amber-400 to-amber-700 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(217,119,6,0.5)] border border-amber-300/20">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              {/* Poste de Barbería (Cuerpo central) */}
+              <rect x="10" y="2" width="4" height="20" rx="1" fill="white" stroke="black" strokeWidth="0.5" />
+              <path d="M10 6h4M10 10h4M10 14h4M10 18h4" stroke="red" strokeWidth="1" />
+              
+              {/* Tijeras Cruzadas */}
+              <circle cx="5" cy="5" r="2.5" />
+              <circle cx="5" cy="19" r="2.5" />
+              <line x1="19" y1="5" x2="8" y2="16" />
+              <line x1="19" y1="19" x2="8" y2="8" />
+              
+              {/* Navaja Clásica */}
+              <path d="M16 4l4 4-8 8-2-2 6-10z" fill="black" />
+              <path d="M12 12l-4 4" strokeWidth="2" />
             </svg>
-            <span className="absolute -bottom-1 -right-1 bg-black text-amber-500 text-[8px] font-black px-1 rounded border border-amber-500">BC</span>
+            <span className="absolute -bottom-2 bg-black text-amber-500 text-[10px] font-black px-2 rounded-full border border-amber-500 shadow-lg">BC</span>
           </div>
+          
           <div className="text-left">
             <h1 className="text-xl font-black tracking-tighter text-amber-500 italic uppercase leading-none">Barber Castel</h1>
-            <p className="text-[9px] text-amber-700 font-bold uppercase tracking-widest leading-none mt-1">Programmed by JAM</p>
+            <p className="text-[9px] text-amber-700 font-bold uppercase tracking-widest leading-none mt-1 italic">Programmed by JAM</p>
           </div>
         </div>
+        
         <button onClick={view === 'client' ? handleAdminAccess : () => setView('client')} className="text-[10px] font-black px-4 py-2 rounded-lg border border-amber-600/50 bg-amber-600/10 text-amber-500 hover:bg-amber-600 hover:text-black transition-all uppercase">
           {view === 'client' ? 'DUEÑO' : 'VOLVER'}
         </button>
@@ -83,22 +94,22 @@ export default function BarberCastel() {
 
       <main className="p-6 max-w-md mx-auto">
         {view === 'client' ? (
-          <section className="text-left animate-in zoom-in-95 duration-500">
+          <section className="animate-in zoom-in-95 duration-500">
             <div className="mb-8">
               <h2 className="text-3xl font-bold mb-2">Reserva tu turno</h2>
-              <p className="text-neutral-500 text-xs uppercase tracking-widest font-semibold italic underline decoration-amber-900">Exclusivo Caballeros</p>
+              <p className="text-neutral-500 text-xs uppercase tracking-widest font-semibold italic underline decoration-amber-900">Estilo Imperial</p>
             </div>
             <form onSubmit={addAppointment} className="space-y-4 bg-neutral-900/40 p-6 rounded-3xl border border-neutral-800 shadow-2xl backdrop-blur-md">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-amber-700 uppercase ml-1 block text-left">Nombre</label>
-                <input name="clientName" required className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl focus:border-amber-500 outline-none text-white transition-all placeholder:text-neutral-700" placeholder="Ej. Juan Pérez" />
+                <label className="text-[10px] font-bold text-amber-700 uppercase ml-1 block">Tu Nombre</label>
+                <input name="clientName" required className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl focus:border-amber-500 outline-none text-white transition-all placeholder:text-neutral-700" placeholder="Nombre completo" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-amber-700 uppercase ml-1 block text-left">Servicio</label>
+                <label className="text-[10px] font-bold text-amber-700 uppercase ml-1 block">Servicio</label>
                 <select name="service" className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl focus:border-amber-500 outline-none text-white appearance-none">
                   <option>Corte Castel (Fondo)</option>
                   <option>Barba & Navaja</option>
-                  <option>Combo Imperial</option>
+                  <option>Combo Imperial (Todo)</option>
                 </select>
               </div>
               <div className="space-y-1">
@@ -111,7 +122,7 @@ export default function BarberCastel() {
             </form>
           </section>
         ) : (
-          <section className="text-left animate-in slide-in-from-bottom duration-500">
+          <section className="animate-in slide-in-from-bottom duration-500">
             <div className="flex justify-between items-center mb-8 bg-neutral-900/50 p-4 rounded-2xl border border-neutral-800 shadow-md">
               <div className="text-left">
                 <h2 className="text-xl font-black text-amber-500 italic uppercase leading-none">Agenda BC</h2>
@@ -124,7 +135,7 @@ export default function BarberCastel() {
             <div className="space-y-4">
               {appointments.length === 0 ? (
                 <div className="text-center py-20 border-2 border-dashed border-neutral-900 rounded-3xl opacity-30">
-                  <p className="text-neutral-600 font-bold uppercase text-xs tracking-widest italic text-center w-full">Vacío</p>
+                  <p className="text-neutral-600 font-bold uppercase text-xs tracking-widest italic">Vacío</p>
                 </div>
               ) : (
                 appointments.map((app) => (
