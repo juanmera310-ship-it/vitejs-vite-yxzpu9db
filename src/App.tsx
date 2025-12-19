@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, BookmarkCheck } from 'lucide-react';
+import { Clock, CheckCircle, BookmarkCheck, AlertCircle } from 'lucide-react';
 
 interface Appointment {
   id: number;
@@ -42,14 +42,25 @@ export default function BarberCastel() {
   const addAppointment = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const selectedTime = formData.get('time') as string;
+
+    // LÓGICA DE VALIDACIÓN: ¿La hora ya está ocupada?
+    const isOccupied = appointments.some(app => app.time === selectedTime);
+
+    if (isOccupied) {
+      alert(`⚠️ Lo sentimos, las ${selectedTime} ya está ocupado. Por favor, elige otro horario.`);
+      return; // Detiene la función para que no se guarde la cita
+    }
+
     const newApp: Appointment = {
       id: Date.now(),
       name: (formData.get('clientName') as string) || 'Cliente',
       service: (formData.get('service') as string) || 'Corte',
-      time: (formData.get('time') as string) || '00:00',
+      time: selectedTime,
     };
+
     setAppointments([...appointments, newApp]);
-    alert(`Cita agendada para ${newApp.name}`);
+    alert(`¡Excelente elección, ${newApp.name}! Tu cita a las ${selectedTime} ha sido confirmada.`);
     e.currentTarget.reset();
   };
 
@@ -57,7 +68,7 @@ export default function BarberCastel() {
     <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans pb-24 text-left">
       <header className="p-6 border-b border-amber-900/30 bg-black sticky top-0 z-50 flex justify-between items-center shadow-2xl">
         <div className="flex items-center gap-4">
-          {/* LOGOTIPO BC: TIJERAS, NAVAJA Y POSTE */}
+          {/* LOGOTIPO BC PREMIUM */}
           <div className="relative w-16 h-16 bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(217,119,6,0.5)] border border-amber-300/20">
             <svg width="45" height="45" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="10.5" y="3" width="3" height="18" rx="1.5" fill="white" stroke="black" strokeWidth="0.2" />
@@ -88,35 +99,52 @@ export default function BarberCastel() {
       <main className="p-6 max-w-md mx-auto">
         {view === 'client' ? (
           <section className="animate-in zoom-in-95 duration-500">
-            <h2 className="text-3xl font-bold mb-6">Reserva tu turno</h2>
+            <h2 className="text-3xl font-bold mb-2">Reserva tu turno</h2>
+            <p className="text-neutral-500 text-xs mb-8 italic">Solo un cliente por horario para tu comodidad.</p>
+            
             <form onSubmit={addAppointment} className="space-y-4 bg-neutral-900/40 p-6 rounded-3xl border border-neutral-800 backdrop-blur-md">
-              <input name="clientName" required className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl focus:border-amber-500 outline-none" placeholder="Tu Nombre" />
-              <select name="service" className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl outline-none">
-                <option>Corte Castel</option>
-                <option>Barba & Navaja</option>
-                <option>Combo Imperial</option>
-              </select>
-              <input name="time" type="time" required className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl" />
-              <button className="w-full bg-amber-600 text-black font-black py-4 rounded-xl flex justify-center items-center gap-2">
-                <BookmarkCheck size={20} /> CONFIRMAR
+              <div className="space-y-1">
+                <label className="text-[10px] text-amber-600 font-black ml-1 uppercase">Nombre</label>
+                <input name="clientName" required className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl focus:border-amber-500 outline-none" placeholder="Tu nombre" />
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[10px] text-amber-600 font-black ml-1 uppercase">Servicio</label>
+                <select name="service" className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl outline-none">
+                  <option>Corte Castel (Fondo)</option>
+                  <option>Barba & Navaja</option>
+                  <option>Combo Imperial</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] text-amber-600 font-black ml-1 uppercase">Selecciona Hora</label>
+                <input name="time" type="time" required className="w-full bg-neutral-950/50 border border-neutral-800 p-4 rounded-xl focus:border-amber-500 outline-none" />
+              </div>
+
+              <button className="w-full bg-amber-600 text-black font-black py-4 rounded-xl flex justify-center items-center gap-2 mt-4 hover:bg-amber-500 transition-colors">
+                <BookmarkCheck size={20} /> CONFIRMAR CITA
               </button>
             </form>
           </section>
         ) : (
           <section className="animate-in slide-in-from-bottom duration-500">
-            <h2 className="text-xl font-black text-amber-500 mb-6 uppercase">Agenda BC</h2>
+            <h2 className="text-xl font-black text-amber-500 mb-6 uppercase">Agenda de Hoy</h2>
             <div className="space-y-4">
-              {appointments.map((app) => (
+              {appointments.sort((a,b) => a.time.localeCompare(b.time)).map((app) => (
                 <div key={app.id} className="bg-neutral-900 border-l-4 border-amber-600 p-5 rounded-xl flex justify-between items-center">
                   <div className="text-left">
-                    <p className="font-bold text-white uppercase">{app.name}</p>
-                    <p className="text-xs text-neutral-500">{app.time} - {app.service}</p>
+                    <p className="font-bold text-white uppercase text-sm leading-tight">{app.name}</p>
+                    <p className="text-[11px] text-neutral-500 mt-1 uppercase tracking-tighter">
+                      <span className="text-amber-500 font-bold">{app.time}</span> — {app.service}
+                    </p>
                   </div>
-                  <button onClick={() => setAppointments(appointments.filter(a => a.id !== app.id))} className="text-neutral-700 hover:text-green-500">
+                  <button onClick={() => setAppointments(appointments.filter(a => a.id !== app.id))} className="text-neutral-700 hover:text-green-500 transition-colors">
                     <CheckCircle size={28} />
                   </button>
                 </div>
               ))}
+              {appointments.length === 0 && <p className="text-center opacity-20 py-10 italic">No hay citas registradas.</p>}
             </div>
           </section>
         )}
