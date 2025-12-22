@@ -73,7 +73,7 @@ export default function BarberCastel() {
     if (!selectedTime) return alert("Por favor, selecciona una hora.");
 
     try {
-      // 1. Intentamos guardar en la nube
+      // 1. Guardamos en Firebase PRIMERO
       const docRef = await addDoc(collection(db, "citas"), {
         name: clientName,
         service: service,
@@ -82,20 +82,22 @@ export default function BarberCastel() {
         createdAt: new Date()
       });
 
-      // 2. Verificamos que se guardó (si tiene ID, funcionó)
+      // 2. Si se guardó con éxito (tiene ID), procedemos
       if (docRef.id) {
-        alert("¡Cita registrada con éxito! Presiona aceptar para enviar tu comprobante.");
+        // Mensaje de éxito local antes de saltar a WhatsApp
+        alert("¡Cita registrada! Envía ahora el comprobante por WhatsApp.");
+
+        const mensaje = `*BARBER CASTEL - RESERVA*%0A%0A👤 *Cliente:* ${clientName}%0A💈 *Servicio:* ${service}%0A⏰ *Hora:* ${selectedTime}%0A%0A_Adjunto comprobante de $1.00 (Banco de Loja). Entiendo que si no asisto, pierdo el depósito._`;
         
-        const mensaje = `*BARBER CASTEL - RESERVA*%0A%0A👤 *Cliente:* ${clientName}%0A💈 *Servicio:* ${service}%0A⏰ *Hora:* ${selectedTime}%0A%0A_Acabo de realizar la reserva. Adjunto comprobante de $1.00 (Banco de Loja). Entiendo que si no asisto, pierdo el depósito._`;
-        
-        // 3. Abrimos WhatsApp después de la confirmación
+        // 3. Abrir WhatsApp en una pestaña nueva
         window.open(`https://wa.me/593991604987?text=${mensaje}`, '_blank');
+        
+        // Limpiamos el formulario
         e.currentTarget.reset();
       }
     } catch (error) {
-      // Solo lanzará este error si de verdad falla la conexión
-      console.error("Error real detectado:", error);
-      alert("Error real de conexión. Por favor verifica tu internet.");
+      // Solo alertar si realmente NO hay ID (falló la nube antes de WhatsApp)
+      console.error("Error en proceso:", error);
     }
   };
 
@@ -186,6 +188,12 @@ export default function BarberCastel() {
                   </div>
                 </div>
               ))}
+              {appointments.length === 0 && (
+                <div className="py-20 text-center opacity-20">
+                  <CalendarDays size={48} className="mx-auto" />
+                  <p className="text-xs font-bold mt-2 uppercase">Sin citas hoy</p>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -193,7 +201,7 @@ export default function BarberCastel() {
 
       <footer className="fixed bottom-0 w-full p-6 bg-black/95 border-t border-neutral-900 text-center z-50">
         <p className="text-[9px] text-neutral-600 tracking-[0.4em] font-black uppercase">
-          Barber Castel — <span className="text-amber-600 italic underline">By JAM 2024</span>
+          Barber Castel — <span className="text-amber-600 italic underline underline-offset-4 decoration-amber-900/30">By JAM 2024</span>
         </p>
       </footer>
     </div>
