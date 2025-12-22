@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-// IMPORTACIÓN CORREGIDA DE ICONOS
 import { 
   CheckCircle, 
   BookmarkCheck, 
   CalendarDays, 
   Wallet, 
-  AlertCircle, 
   Scissors, 
-  Trash2 
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { 
@@ -71,7 +70,7 @@ export default function BarberCastel() {
     const clientName = formData.get('clientName') as string;
     const service = formData.get('service') as string;
 
-    if (!selectedTime) return alert("Por favor, selecciona un horario.");
+    if (!selectedTime) return alert("Por favor, selecciona una hora.");
 
     try {
       await addDoc(collection(db, "citas"), {
@@ -82,13 +81,13 @@ export default function BarberCastel() {
         createdAt: new Date()
       });
 
-      const mensaje = `*BARBER CASTEL - RESERVA*%0A%0A👤 *Cliente:* ${clientName}%0A💈 *Servicio:* ${service}%0A⏰ *Hora:* ${selectedTime}%0A%0A_Adjunto comprobante del Banco de Loja para confirmación._`;
+      const mensaje = `*BARBER CASTEL - RESERVA*%0A%0A👤 *Cliente:* ${clientName}%0A💈 *Servicio:* ${service}%0A⏰ *Hora:* ${selectedTime}%0A%0A_Adjunto comprobante de $1.00 (Banco de Loja). Entiendo que si no asisto, pierdo el depósito._`;
       window.open(`https://wa.me/593991604987?text=${mensaje}`, '_blank');
       
-      alert("¡Reserva enviada! Envía el comprobante por WhatsApp.");
+      alert("¡Cita registrada! Envía el comprobante de $1 por WhatsApp para confirmar tu turno.");
       e.currentTarget.reset();
     } catch (error) {
-      alert("Error de conexión con la nube.");
+      alert("Error en la nube.");
     }
   };
 
@@ -97,7 +96,7 @@ export default function BarberCastel() {
   };
 
   const removeAppointment = async (id: string) => {
-    if(confirm("¿Eliminar esta cita?")) {
+    if(confirm("¿Eliminar cita?")) {
       await deleteDoc(doc(db, "citas", id));
     }
   };
@@ -116,81 +115,85 @@ export default function BarberCastel() {
             <p className="text-[8px] text-amber-700 font-bold uppercase mt-1 tracking-widest leading-none">Macará - JAM</p>
           </div>
         </div>
-        <button 
-          onClick={() => {
-            if(isLogged) setView(view === 'client' ? 'owner' : 'client');
-            else {
-              const p = prompt("Clave:");
-              if(p === ADMIN_PASSWORD) { setIsLogged(true); setView('owner'); }
-            }
-          }}
-          className="text-[9px] font-black px-4 py-2 rounded-lg border border-amber-600/30 text-amber-500 uppercase"
-        >
+        <button onClick={() => { if(isLogged) setView(view === 'client' ? 'owner' : 'client'); else { const p = prompt("Clave:"); if(p === ADMIN_PASSWORD) { setIsLogged(true); setView('owner'); } } }} className="text-[9px] font-black px-4 py-2 rounded-lg border border-amber-600/30 text-amber-500 uppercase">
           {view === 'client' ? 'Admin' : 'Volver'}
         </button>
       </header>
 
       <main className="p-6 max-w-md mx-auto">
         {view === 'client' ? (
-          <section className="space-y-8">
-            <div className="bg-amber-600/5 border border-amber-600/20 p-5 rounded-2xl flex gap-4 items-center">
-              <Wallet className="text-amber-500" size={28} />
-              <div className="text-left">
-                <p className="font-black text-amber-500 uppercase text-[10px] italic">Pago para confirmar</p>
-                <p className="text-white font-bold text-sm leading-tight">Banco de Loja - Ahorros</p>
-                <p className="text-amber-200/80 font-mono text-xs">2904263162</p>
-                <p className="text-neutral-400 text-[10px] uppercase mt-0.5 leading-none">Jhon David Castillo P.</p>
+          <section className="space-y-6 animate-in fade-in duration-500">
+            {/* CUADRO DE PAGO ACTUALIZADO */}
+            <div className="bg-amber-600/5 border border-amber-600/20 p-5 rounded-2xl space-y-4">
+              <div className="flex gap-4 items-center">
+                <Wallet className="text-amber-500" size={28} />
+                <div className="text-left">
+                  <p className="font-black text-amber-500 uppercase text-[10px] italic">Reserva con $1.00</p>
+                  <p className="text-white font-bold text-sm leading-tight">Banco de Loja - Ahorros</p>
+                  <p className="text-amber-200/80 font-mono text-xs">2904263162</p>
+                  <p className="text-neutral-400 text-[10px] uppercase mt-0.5 leading-none">Jhon David Castillo P.</p>
+                </div>
+              </div>
+              <div className="bg-red-950/30 border border-red-900/30 p-3 rounded-xl flex gap-3 items-center">
+                <AlertTriangle className="text-red-500 shrink-0" size={18} />
+                <p className="text-[9px] text-red-200 leading-tight uppercase font-bold">Importante: Si no llega a la cita, pierde el depósito de $1.00 sin excepción.</p>
               </div>
             </div>
 
-            <form onSubmit={addAppointment} className="space-y-6">
+            <form onSubmit={addAppointment} className="space-y-6 text-left">
               <h2 className="text-3xl font-black italic uppercase leading-none">Agendar Turno</h2>
               <div className="space-y-4">
-                <input name="clientName" required className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none focus:border-amber-600 text-sm" placeholder="Tu nombre" />
-                <select name="service" className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none text-sm">
-                  <option>Corte Castel ($7.00)</option>
-                  <option>Barba ($5.00)</option>
-                  <option>Combo Premium ($12.00)</option>
-                </select>
-                <div className="grid grid-cols-3 gap-2">
-                  {freeHours.map(hour => (
-                    <label key={hour} className="cursor-pointer">
-                      <input type="radio" name="time" value={hour} className="peer sr-only" required />
-                      <div className="bg-neutral-900 border border-neutral-800 p-3 rounded-xl text-center text-xs font-bold peer-checked:bg-amber-600 peer-checked:text-black transition-all">{hour}</div>
-                    </label>
-                  ))}
+                <div className="space-y-1">
+                  <label className="text-[10px] text-amber-600 font-black uppercase ml-1">Tu Nombre</label>
+                  <input name="clientName" required className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none focus:border-amber-600" placeholder="Ej: Juan Pérez" />
+                </div>
+                
+                <div className="space-y-1">
+                  <label className="text-[10px] text-amber-600 font-black uppercase ml-1">Servicio Disponible</label>
+                  <select name="service" className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none font-bold text-amber-500">
+                    <option>Corte Castel ($4.00)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] text-amber-600 font-black uppercase ml-1">Horas Disponibles</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {freeHours.map(hour => (
+                      <label key={hour} className="cursor-pointer">
+                        <input type="radio" name="time" value={hour} className="peer sr-only" required />
+                        <div className="bg-neutral-900 border border-neutral-800 p-3 rounded-xl text-center text-xs font-bold peer-checked:bg-amber-600 peer-checked:text-black transition-all">{hour}</div>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <button className="w-full bg-amber-600 text-black font-black py-4 rounded-2xl shadow-lg uppercase text-sm italic tracking-tighter">
-                <BookmarkCheck size={20} className="inline mr-2" /> CONFIRMAR RESERVA
+                <BookmarkCheck size={20} className="inline mr-2" /> Reservar con $1.00
               </button>
             </form>
           </section>
         ) : (
+          /* PANEL DEL DUEÑO */
           <section className="space-y-4">
-            <h2 className="text-xl font-black text-amber-500 uppercase italic">Validación de Pagos</h2>
+            <h2 className="text-xl font-black text-amber-500 uppercase italic">Control de Citas</h2>
             {appointments.map((app) => (
               <div key={app.id} className={`bg-neutral-900/50 border-l-4 p-4 rounded-xl flex justify-between items-center ${app.status === 'pendiente' ? 'border-red-600' : 'border-green-500'}`}>
                 <div className="text-left">
-                  <p className="font-bold text-white uppercase text-xs">{app.name}</p>
+                  <p className="font-bold text-white uppercase text-xs">{app.name} {app.status === 'pendiente' && <span className="text-[7px] bg-red-600 text-white px-1 ml-1 rounded">POR CONFIRMAR $1</span>}</p>
                   <p className="text-[10px] text-neutral-500 font-bold mt-1 uppercase leading-none">{app.time} — {app.service}</p>
                 </div>
                 <div className="flex gap-2">
                   {app.status === 'pendiente' && (
-                    <button onClick={() => confirmAppointment(app.id)} className="text-green-500 p-1">
-                      <CheckCircle size={24} />
-                    </button>
+                    <button onClick={() => confirmAppointment(app.id)} className="text-green-500 p-1"><CheckCircle size={24} /></button>
                   )}
-                  <button onClick={() => removeAppointment(app.id)} className="text-neutral-700">
-                    <Trash2 size={20} />
-                  </button>
+                  <button onClick={() => removeAppointment(app.id)} className="text-neutral-700"><Trash2 size={20} /></button>
                 </div>
               </div>
             ))}
             {appointments.length === 0 && (
               <div className="py-20 text-center opacity-20">
                 <CalendarDays size={48} className="mx-auto" />
-                <p className="text-xs font-bold uppercase mt-2">Sin citas hoy</p>
+                <p className="text-xs font-bold mt-2">No hay citas registradas</p>
               </div>
             )}
           </section>
