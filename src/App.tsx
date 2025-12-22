@@ -73,7 +73,8 @@ export default function BarberCastel() {
     if (!selectedTime) return alert("Por favor, selecciona una hora.");
 
     try {
-      await addDoc(collection(db, "citas"), {
+      // 1. Intentamos guardar en la nube
+      const docRef = await addDoc(collection(db, "citas"), {
         name: clientName,
         service: service,
         time: selectedTime,
@@ -81,13 +82,20 @@ export default function BarberCastel() {
         createdAt: new Date()
       });
 
-      const mensaje = `*BARBER CASTEL - RESERVA*%0A%0A👤 *Cliente:* ${clientName}%0A💈 *Servicio:* ${service}%0A⏰ *Hora:* ${selectedTime}%0A%0A_Adjunto comprobante de $1.00 (Banco de Loja). Entiendo que si no asisto, pierdo el depósito._`;
-      window.open(`https://wa.me/593991604987?text=${mensaje}`, '_blank');
-      
-      alert("¡Cita registrada! Envía el comprobante de $1 por WhatsApp para confirmar tu turno.");
-      e.currentTarget.reset();
+      // 2. Verificamos que se guardó (si tiene ID, funcionó)
+      if (docRef.id) {
+        alert("¡Cita registrada con éxito! Presiona aceptar para enviar tu comprobante.");
+        
+        const mensaje = `*BARBER CASTEL - RESERVA*%0A%0A👤 *Cliente:* ${clientName}%0A💈 *Servicio:* ${service}%0A⏰ *Hora:* ${selectedTime}%0A%0A_Acabo de realizar la reserva. Adjunto comprobante de $1.00 (Banco de Loja). Entiendo que si no asisto, pierdo el depósito._`;
+        
+        // 3. Abrimos WhatsApp después de la confirmación
+        window.open(`https://wa.me/593991604987?text=${mensaje}`, '_blank');
+        e.currentTarget.reset();
+      }
     } catch (error) {
-      alert("Error en la nube.");
+      // Solo lanzará este error si de verdad falla la conexión
+      console.error("Error real detectado:", error);
+      alert("Error real de conexión. Por favor verifica tu internet.");
     }
   };
 
@@ -105,17 +113,17 @@ export default function BarberCastel() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 font-sans pb-28 text-left">
-      <header className="p-5 border-b border-amber-900/20 bg-black/50 backdrop-blur-md sticky top-0 z-50 flex justify-between items-center">
+      <header className="p-5 border-b border-amber-900/20 bg-black/50 backdrop-blur-md sticky top-0 z-50 flex justify-between items-center shadow-2xl">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-            <Scissors size={24} color="black" />
+          <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(217,119,6,0.3)]">
+            <Scissors size={24} color="black" strokeWidth={2.5} />
           </div>
           <div>
-            <h1 className="text-lg font-black text-amber-500 italic uppercase leading-none">Barber Castel</h1>
+            <h1 className="text-lg font-black text-amber-500 italic uppercase leading-none tracking-tighter">Barber Castel</h1>
             <p className="text-[8px] text-amber-700 font-bold uppercase mt-1 tracking-widest leading-none">Macará - JAM</p>
           </div>
         </div>
-        <button onClick={() => { if(isLogged) setView(view === 'client' ? 'owner' : 'client'); else { const p = prompt("Clave:"); if(p === ADMIN_PASSWORD) { setIsLogged(true); setView('owner'); } } }} className="text-[9px] font-black px-4 py-2 rounded-lg border border-amber-600/30 text-amber-500 uppercase">
+        <button onClick={() => { if(isLogged) setView(view === 'client' ? 'owner' : 'client'); else { const p = prompt("Clave:"); if(p === ADMIN_PASSWORD) { setIsLogged(true); setView('owner'); } } }} className="text-[9px] font-black px-4 py-2 rounded-lg border border-amber-600/30 text-amber-500 uppercase tracking-widest">
           {view === 'client' ? 'Admin' : 'Volver'}
         </button>
       </header>
@@ -123,84 +131,67 @@ export default function BarberCastel() {
       <main className="p-6 max-w-md mx-auto">
         {view === 'client' ? (
           <section className="space-y-6 animate-in fade-in duration-500">
-            {/* CUADRO DE PAGO ACTUALIZADO */}
-            <div className="bg-amber-600/5 border border-amber-600/20 p-5 rounded-2xl space-y-4">
+            <div className="bg-amber-600/5 border border-amber-600/20 p-5 rounded-2xl space-y-4 shadow-inner">
               <div className="flex gap-4 items-center">
                 <Wallet className="text-amber-500" size={28} />
                 <div className="text-left">
                   <p className="font-black text-amber-500 uppercase text-[10px] italic">Reserva con $1.00</p>
                   <p className="text-white font-bold text-sm leading-tight">Banco de Loja - Ahorros</p>
                   <p className="text-amber-200/80 font-mono text-xs">2904263162</p>
-                  <p className="text-neutral-400 text-[10px] uppercase mt-0.5 leading-none">Jhon David Castillo P.</p>
+                  <p className="text-neutral-400 text-[10px] uppercase mt-0.5 leading-none font-bold">Jhon David Castillo P.</p>
                 </div>
               </div>
-              <div className="bg-red-950/30 border border-red-900/30 p-3 rounded-xl flex gap-3 items-center">
+              <div className="bg-red-950/20 border border-red-900/30 p-3 rounded-xl flex gap-3 items-center">
                 <AlertTriangle className="text-red-500 shrink-0" size={18} />
-                <p className="text-[9px] text-red-200 leading-tight uppercase font-bold">Importante: Si no llega a la cita, pierde el depósito de $1.00 sin excepción.</p>
+                <p className="text-[9px] text-red-200 leading-tight uppercase font-black">Nota: Si no asiste, pierde el depósito de $1.00.</p>
               </div>
             </div>
 
-            <form onSubmit={addAppointment} className="space-y-6 text-left">
-              <h2 className="text-3xl font-black italic uppercase leading-none">Agendar Turno</h2>
+            <form onSubmit={addAppointment} className="space-y-6">
+              <h2 className="text-3xl font-black italic uppercase leading-none tracking-tighter">Agendar Turno</h2>
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-amber-600 font-black uppercase ml-1">Tu Nombre</label>
-                  <input name="clientName" required className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none focus:border-amber-600" placeholder="Ej: Juan Pérez" />
-                </div>
-                
-                <div className="space-y-1">
-                  <label className="text-[10px] text-amber-600 font-black uppercase ml-1">Servicio Disponible</label>
-                  <select name="service" className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none font-bold text-amber-500">
-                    <option>Corte Castel ($4.00)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-[10px] text-amber-600 font-black uppercase ml-1">Horas Disponibles</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {freeHours.map(hour => (
-                      <label key={hour} className="cursor-pointer">
-                        <input type="radio" name="time" value={hour} className="peer sr-only" required />
-                        <div className="bg-neutral-900 border border-neutral-800 p-3 rounded-xl text-center text-xs font-bold peer-checked:bg-amber-600 peer-checked:text-black transition-all">{hour}</div>
-                      </label>
-                    ))}
-                  </div>
+                <input name="clientName" required className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none focus:border-amber-600 transition-all text-sm" placeholder="Tu nombre" />
+                <select name="service" className="w-full bg-neutral-900 border border-neutral-800 p-4 rounded-xl outline-none text-sm font-bold text-amber-500 appearance-none">
+                  <option>Corte Castel ($4.00)</option>
+                </select>
+                <div className="grid grid-cols-3 gap-2">
+                  {freeHours.map(hour => (
+                    <label key={hour} className="cursor-pointer group">
+                      <input type="radio" name="time" value={hour} className="peer sr-only" required />
+                      <div className="bg-neutral-900 border border-neutral-800 p-3 rounded-xl text-center text-xs font-bold peer-checked:bg-amber-600 peer-checked:text-black transition-all group-active:scale-90">{hour}</div>
+                    </label>
+                  ))}
                 </div>
               </div>
-              <button className="w-full bg-amber-600 text-black font-black py-4 rounded-2xl shadow-lg uppercase text-sm italic tracking-tighter">
+              <button className="w-full bg-amber-600 text-black font-black py-4 rounded-2xl shadow-xl shadow-amber-600/10 uppercase text-sm italic tracking-tighter active:scale-95 transition-transform">
                 <BookmarkCheck size={20} className="inline mr-2" /> Reservar con $1.00
               </button>
             </form>
           </section>
         ) : (
-          /* PANEL DEL DUEÑO */
-          <section className="space-y-4">
-            <h2 className="text-xl font-black text-amber-500 uppercase italic">Control de Citas</h2>
-            {appointments.map((app) => (
-              <div key={app.id} className={`bg-neutral-900/50 border-l-4 p-4 rounded-xl flex justify-between items-center ${app.status === 'pendiente' ? 'border-red-600' : 'border-green-500'}`}>
-                <div className="text-left">
-                  <p className="font-bold text-white uppercase text-xs">{app.name} {app.status === 'pendiente' && <span className="text-[7px] bg-red-600 text-white px-1 ml-1 rounded">POR CONFIRMAR $1</span>}</p>
-                  <p className="text-[10px] text-neutral-500 font-bold mt-1 uppercase leading-none">{app.time} — {app.service}</p>
+          <section className="space-y-4 animate-in slide-in-from-bottom duration-500">
+            <h2 className="text-xl font-black text-amber-500 uppercase italic">Gestión de Turnos</h2>
+            <div className="space-y-3">
+              {appointments.map((app) => (
+                <div key={app.id} className={`bg-neutral-900/50 border-l-4 p-4 rounded-xl flex justify-between items-center ${app.status === 'pendiente' ? 'border-red-600' : 'border-green-500'}`}>
+                  <div className="text-left">
+                    <p className="font-black text-white uppercase text-xs tracking-tight">{app.name} {app.status === 'pendiente' && <span className="text-[7px] bg-red-600 text-white px-1 ml-1 rounded">PENDIENTE $1</span>}</p>
+                    <p className="text-[10px] text-neutral-500 font-bold mt-1 uppercase leading-none">{app.time} — {app.service}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {app.status === 'pendiente' && (
+                      <button onClick={() => confirmAppointment(app.id)} className="text-green-500 p-2 bg-green-500/10 rounded-lg border border-green-500/20"><CheckCircle size={20} /></button>
+                    )}
+                    <button onClick={() => removeAppointment(app.id)} className="text-neutral-700 hover:text-red-500 p-2"><Trash2 size={20} /></button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  {app.status === 'pendiente' && (
-                    <button onClick={() => confirmAppointment(app.id)} className="text-green-500 p-1"><CheckCircle size={24} /></button>
-                  )}
-                  <button onClick={() => removeAppointment(app.id)} className="text-neutral-700"><Trash2 size={20} /></button>
-                </div>
-              </div>
-            ))}
-            {appointments.length === 0 && (
-              <div className="py-20 text-center opacity-20">
-                <CalendarDays size={48} className="mx-auto" />
-                <p className="text-xs font-bold mt-2">No hay citas registradas</p>
-              </div>
-            )}
+              ))}
+            </div>
           </section>
         )}
       </main>
 
-      <footer className="fixed bottom-0 w-full p-6 bg-black/90 border-t border-neutral-900 text-center">
+      <footer className="fixed bottom-0 w-full p-6 bg-black/95 border-t border-neutral-900 text-center z-50">
         <p className="text-[9px] text-neutral-600 tracking-[0.4em] font-black uppercase">
           Barber Castel — <span className="text-amber-600 italic underline">By JAM 2024</span>
         </p>
